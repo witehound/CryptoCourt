@@ -8,7 +8,7 @@ contract Case {
     address public Judge;
     address public Plaintiff;
     address public Defendant;
-    State public state;
+    State public CaseState = State.NotCreated;
     argument[] public arguments;
 
     mapping(address => uint256) public argumentsCount;
@@ -19,6 +19,7 @@ contract Case {
     }
 
     enum State {
+        NotCreated,
         Created,
         Started,
         Ended
@@ -29,18 +30,19 @@ contract Case {
         string memory _desc,
         address _deff
     ) {
+        require(msg.sender != _deff);
         Title = _title;
         Description = _desc;
         Plaintiff = msg.sender;
         Defendant = _deff;
-        state = State.Created;
+        CaseState = State.Created;
     }
 
     function becomeJudge() public {
         require(msg.sender != Plaintiff, "Plattiff cant become judge");
         require(msg.sender != Defendant, "Defendant cant become judge");
         Judge = msg.sender;
-        state = State.Started;
+        CaseState = State.Started;
     }
 
     function whoIsJudge() public view returns (address) {
@@ -53,9 +55,10 @@ contract Case {
             "only plantiff or defendant can make argument"
         );
         require(
-            argumentsCount[msg.sender] <= 3,
+            argumentsCount[msg.sender] <= 2,
             "only allowed to make 3 arguments"
         );
+        require(CaseState == State.Started, "case must be started!");
         argument memory newArgument = argument({
             argument: _argument,
             maker: msg.sender
